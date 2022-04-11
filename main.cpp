@@ -12,7 +12,6 @@
 #define LEN 100 // should be 34? = 5*7-1
 RawSerial uart(D1, D0);
 DigitalInOut RTS(D2);
-DigitalOut dbg(LED1);
 volatile uint8_t waitForReceive = 0;
 volatile uint8_t nextReload = 15;
 uint8_t rx_buffer[LEN];
