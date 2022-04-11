@@ -1,0 +1,5 @@
+\build
+\mbed-os
+projectfiles
+*.py*
+.mbed
