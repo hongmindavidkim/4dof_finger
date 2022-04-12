@@ -4,6 +4,7 @@
 #include "string.h"
 #include "dynamixel_XM430.h"
 #include "math.h"
+#include "VL6180X.h"
 
 
 // Initialize stuff for dynamixels
@@ -37,13 +38,34 @@ uint32_t initPos[] = {128, 128, 128, 128};
 // Final Position
 uint32_t finPos[] = {3000, 3000, 3000, 3000};
 
+// ToF sensor i2c busses
+I2C i2c1(PF_0, PF_1); //(PB_9, PB_8); // SDA, SCL
+// initialize sensors
+VL6180X tof1; // right finger inner
+
+int range[1];
+float range_m[1]; // range in m
+int range_status[1];
+uint16_t range_period = 30;
+
 // Main loop, receiving commands as fast as possible, then writing to a dynamixel
 int main() {
     
-
     // Board has power, main loop is running
     led_pwr = 1;
     led_mot = 0;
+    // ToF Setup
+    i2c1.frequency(400000);
+    pc.printf("Sensor 1...\n\r");
+    wait_us(100);
+    if(!tof1.begin(&i2c1)){
+        pc.printf("Sensor 1 init failed.\n\r");
+    }
+    wait_us(100);
+    tof1.stopRangeContinuous();
+    wait_us(100);
+    tof1.startRangeContinuous(range_period);
+    wait_us(1000);
 
     // Set up dynamixel
     wait_ms(300);
@@ -75,10 +97,17 @@ int main() {
 
     // On every received message, run dynamixel control loop...eventually move this to an interrupt on received message
     while (true) {
-        dxl_bus.SetMultGoalPositions(dxl_ID, idLength, initPos);
-        wait_ms(1000);
-        dxl_bus.SetMultGoalPositions(dxl_ID, idLength, finPos);
-        wait_ms(1000);
+        //dxl_bus.SetMultGoalPositions(dxl_ID, idLength, initPos);
+        //wait_ms(1000);
+        //dxl_bus.SetMultGoalPositions(dxl_ID, idLength, finPos);
+        //wait_ms(1000);
+        
+        wait_us(10);
+        range[0] = tof1.readRangeResult();
+        wait_us(10);
+        range_status[0] = tof1.readRangeStatus();
+        pc.printf("%d\n\r", range[0]);
+       
     }
 
 }

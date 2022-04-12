@@ -3,3 +3,5 @@
 projectfiles
 *.py*
 .mbed
+BUILD
+VL6180X
