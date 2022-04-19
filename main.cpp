@@ -11,6 +11,7 @@
 #define M_PI 3.141592653  /* pi */
 #define WAIT_TIME_MS 1
 #define LEN 100 // should be 34? = 5*7-1
+#define wait_ms(x) wait_us(x*1000)
 RawSerial uart(D1, D0);
 DigitalInOut RTS(D2);
 volatile uint8_t waitForReceive = 0;
@@ -33,10 +34,10 @@ Timer t;
 int loop_time;
 
 // Initial Position
-uint32_t initPos[] = {128, 128, 128, 128};
+uint32_t initPos[] = {1, 1, 1, 1};
 
 // Final Position
-uint32_t finPos[] = {3000, 3000, 3000, 3000};
+uint32_t finPos[] = {4095, 4095, 4095, 4095};
 
 // ToF sensor i2c busses
 I2C i2c1(PF_0, PF_1); //(PB_9, PB_8); // SDA, SCL
