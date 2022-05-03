@@ -162,6 +162,10 @@ public:
     void SetGoalCurrent(uint8_t id, uint16_t current);
     uint16_t GetGoalCurrent(uint8_t id);
 
+    /** Added by David **/
+    void SetVelocityProfile(uint8_t id, uint32_t vprofile);
+    void SetAccelerationProfile(uint8_t id, uint32_t aprofile);
+
     void SetMultGoalPositions(uint8_t ids[], uint8_t idLength, uint32_t positions[]);
     void GetMultGoalPositions(int32_t* ret_pos, uint8_t ids[], uint8_t idLength);
     void SetMultGoalCurrents(uint8_t ids[], uint8_t idLength, uint16_t currents[]);

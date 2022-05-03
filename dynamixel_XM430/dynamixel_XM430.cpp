@@ -551,6 +551,29 @@ uint16_t XM430_bus::GetGoalCurrent(uint8_t id)
     return GetSomething16(id, GOAL_CURRENT);
 }
 
+// Added by David //
+void XM430_bus::SetVelocityProfile(uint8_t id, uint32_t vprofile)
+{
+    uint8_t parameter[4];
+    parameter[0] = (uint8_t) (vprofile&0x00000FF);
+    parameter[1] = (uint8_t) ((vprofile&0x0000FF00)>>8);
+    parameter[2] = (uint8_t) ((vprofile&0x00FF0000)>>16);
+    parameter[3] = (uint8_t) (vprofile>>24);
+
+    SetSomething(id, PROF_VELOCITY, parameter, 4);
+}
+
+void XM430_bus::SetAccelerationProfile(uint8_t id, uint32_t aprofile)
+{
+    uint8_t parameter[4];
+    parameter[0] = (uint8_t) (aprofile&0x00000FF);
+    parameter[1] = (uint8_t) ((aprofile&0x0000FF00)>>8);
+    parameter[2] = (uint8_t) ((aprofile&0x00FF0000)>>16);
+    parameter[3] = (uint8_t) (aprofile>>24);
+
+    SetSomething(id, PROF_ACCEL, parameter, 4);
+}
+
 void XM430_bus::SetMultGoalPositions(uint8_t ids[], uint8_t idLength, uint32_t positions[])
 {
     uint8_t num_params = idLength*5; // 1 for ID + 4 for data length
