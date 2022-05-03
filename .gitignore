@@ -5,3 +5,4 @@ projectfiles
 .mbed
 BUILD
 VL6180X
+*.hg

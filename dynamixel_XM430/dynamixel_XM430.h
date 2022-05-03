@@ -19,7 +19,7 @@ Using Dynamixel Protocol 2.0: https://emanual.robotis.com/docs/en/dxl/protocol2/
 #define MODEL_NUMBER            0x00    //R         1200    -
 #define MODEL_INFO              0x02    //R         -       -
 #define VERSION                 0x06    //R         -       -
-#define XL_ID_ADDRESS           0x07    //RW        1       0 ~ 252(0xFC) Broadcast = 0xFE(?)
+#define XM_ID_ADDRESS           0x07    //RW        1       0 ~ 252(0xFC) Broadcast = 0xFE(?)
 #define BAUD_RATE               0x08    //RW        1       0 : 9600, 1 : 57600, 2 : 115200, 3 : 1Mbps
 #define RETURN_DELAY_TIME       0x09    //RW        250     0 ~ 254 (in 2 usec)
 #define DRIVE_MODE              0x0A    //RW        0       0 ~ 5 (0 is normal operation)

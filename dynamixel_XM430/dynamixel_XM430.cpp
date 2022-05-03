@@ -1,5 +1,5 @@
 #include "dynamixel_XM430.h"
-
+#define wait_ms(x) wait_us(x*1000)
 XM430_bus::XM430_bus(uint32_t baud, PinName tx, PinName rx, PinName rts): sbus(tx, rx), rtswitch(rts)
 {
     baudrate = baud;
@@ -312,13 +312,13 @@ void XM430_bus::SetID(uint8_t id, uint8_t newId)
     uint8_t parameter[1];
     parameter[0] = newId;
 
-    SetSomething(id, XL_ID_ADDRESS, parameter, 1);
+    SetSomething(id, XM_ID_ADDRESS, parameter, 1);
     wait_ms(200);   //Waits for the value to be written in EEPROM
 }
 
 uint8_t XM430_bus::GetID(uint8_t id)
 {
-    return GetSomething(id, XL_ID_ADDRESS);
+    return GetSomething(id, XM_ID_ADDRESS);
 }
 
 void XM430_bus::SetBaudRate(uint8_t id, uint8_t baudrt)
