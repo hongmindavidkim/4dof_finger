@@ -104,11 +104,11 @@ int main() {
     // On every received message, run dynamixel control loop...eventually move this to an interrupt on received message
     while (true) {
         dxl_bus.SetGoalPosition(dxl_ID, initPos);
-        wait_ms(1000);
+        wait_ms(100);
         pc.printf("%d\n\r", dxl_bus.GetPosition(dxl_ID));
 
         dxl_bus.SetGoalPosition(dxl_ID, finPos);
-        wait_ms(1000);
+        wait_ms(100);
         pc.printf("%d\n\r", dxl_bus.GetPosition(dxl_ID));
         
         /**

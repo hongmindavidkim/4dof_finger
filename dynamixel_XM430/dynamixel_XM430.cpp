@@ -1,5 +1,6 @@
 #include "dynamixel_XM430.h"
 #define wait_ms(x) wait_us(x*1000)
+extern RawSerial pc;
 XM430_bus::XM430_bus(uint32_t baud, PinName tx, PinName rx, PinName rts): sbus(tx, rx), rtswitch(rts)
 {
     baudrate = baud;
@@ -134,7 +135,9 @@ void XM430_bus::getRPacket()
 {
     int i = 0;
     float timeOut = return_delay + (12.0 * (float) ((float) rPacketLength) / ((float) baudrate)); //12 = 10 (start + 8 bits + stop) + 2 (gives a bit more time)
-    wait_us(15); // same as delay in sendIPacket();
+    //pc.printf("timeout: %f\n\r",timeOut);
+    
+    wait_us(100); // same as delay in sendIPacket(); // Changed to 100us from 15us by David
     Timer tr;
     tr.start();
     while((i < rPacketLength)){ // && (tr.read() <= timeOut*2.0)) {
@@ -147,7 +150,7 @@ void XM430_bus::getRPacket()
         }
     }
     tr.stop();
-
+    //pc.printf("condition :%f\n\r",tr.read());
     if (tr.read() >= timeOut) rPacket[8] = 0x80; //Creates an error code for the missed packet
 }
 
@@ -232,11 +235,11 @@ uint32_t XM430_bus::GetSomething32(uint8_t id, uint16_t address)
             return (uint32_t)rPacket[9] | (((uint32_t)rPacket[10]<<8)&0x0000FF00) | (((uint32_t)rPacket[11]<<16)&0x00FF0000) | (((uint32_t)rPacket[12]<<24)&0xFF000000);
 
         case 0x80 :
-            //pc.printf("Missed status packet\r\n"); // Print error
+            pc.printf("Missed status packet\r\n"); // Print error
             return (uint32_t)rPacket[8];
 
         default :   //Error occurred
-            //pc.printf("Error %d in status packet\r\n", rPacket[8]); // Print error
+            pc.printf("Error %d in status packet\r\n", rPacket[8]); // Print error
             return (uint32_t)rPacket[8]; //Return error status
     }
 }
