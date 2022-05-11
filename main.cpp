@@ -33,6 +33,7 @@ DigitalOut led_com(LED3);
 // Initialize serial port
 RawSerial pc(USBTX, USBRX, 921600);
 Timer t;
+Timer t2;
 int loop_time;
 
 // Initial Positions
@@ -53,7 +54,11 @@ float currentPos[4];
 float currentVel[4];
 float currentCur[4];
 
-float KdJ = 0.1f; // bonus joint damping
+
+float Kp = 0.3f; // current control PD gains
+float Kd = 0.01f;
+
+float KdJ = 0.0f; // bonus joint damping
 float Kt = 3.0f/2.3f; // effective torque constant, Nm/A
 float Kt_inv = 1.0f/Kt;
 float pulse_to_rad = (2.0f*3.14159f)/4096.0f; // = 0.001534
@@ -122,15 +127,16 @@ int main() {
     for (int i=0; i<idLength; i++) {
         dxl_bus.SetTorqueEn(dxl_ID[i],0x00);    
         dxl_bus.SetRetDelTime(dxl_ID[i],0x32); // TODO: make this shorter?
-        dxl_bus.SetControlMode(dxl_ID[i], POSITION_CONTROL);
-        // dxl_bus.SetControlMode(dxl_ID[i], CURRENT_CONTROL);
+        // dxl_bus.SetControlMode(dxl_ID[i], POSITION_CONTROL);
+        dxl_bus.SetControlMode(dxl_ID[i], CURRENT_CONTROL);
         wait_ms(100);    
         dxl_bus.TurnOnLED(dxl_ID[i], 0x01);
         //dxl_bus.TurnOnLED(dxl_ID[i], 0x00); // turn off LED
         dxl_bus.SetTorqueEn(dxl_ID[i],0x01); // Enable motors
         wait_ms(100);
     }
-
+    
+    /*
     for (int i=0; i<idLength; i++) {
         dxl_bus.SetVelocityProfile(dxl_ID[i], 414); // 414(94.81RPM) @ 14.8V, 330(75.57RPM) @ 12V
         dxl_bus.SetAccelerationProfile(dxl_ID[i], 80); // 17166 rev/min^2
@@ -140,32 +146,27 @@ int main() {
 
     dxl_bus.SetMultGoalPositions(dxl_ID, idLength, multiHomePos); 
     wait_ms(2000);
+    */
+    pc.printf("Setting current control mode.\n\r");
 
     pc.printf("Starting...\n\r");
 
     // Attach interrupts
-    motor_cmd.attach_us(&send_motor_cmd, 500000); // send every 0.5 seconds
-    motor_data.attach_us(&get_motor_data, 5000); // get data every 5ms (200Hz)
-    // Start timer
+    motor_cmd.attach_us(&send_motor_cmd, 3000); // send at ~333Hz
+    motor_data.attach_us(&get_motor_data, 50000); // print data at 20Hz (could be even slower)
+    // Start timers
     t.reset();
     t.start();
+    t2.reset();
+    t2.start();
 
     // On every received message, run dynamixel control loop...eventually move this to an interrupt on received message
     while (true) {
 
         if (motor_cmd_flag==1){
             motor_cmd_flag = 0;
-            if (motor_cmd_pos==1){
-                dxl_bus.SetMultGoalPositions(dxl_ID, idLength, tempPos1);
-                motor_cmd_pos = 0;
-            } else if (motor_cmd_pos==0){
-                dxl_bus.SetMultGoalPositions(dxl_ID, idLength, tempPos2);
-                motor_cmd_pos = 1;
-            }
-        }
 
-        if (motor_data_flag==1){
-            motor_data_flag = 0;
+            t2.reset();
             // get data
             dxl_bus.GetMultPositions(dxl_position, dxl_ID, idLength);
             dxl_bus.GetMultVelocities(dxl_velocity, dxl_ID, idLength);
@@ -176,8 +177,37 @@ int main() {
                 currentVel[i] = rpm_to_rads*(float)dxl_velocity[i];
                 currentCur[i] = 0.001f*(float)dxl_current[i];
             }
+            desired_current[0] = Kp*(3.14159f-currentPos[0]) + Kd*(0.0f-currentVel[0]) - KdJ*currentVel[0];
+            desired_current[1] = Kp*(3.14159f-currentPos[1]) + Kd*(0.0f-currentVel[1]) - KdJ*currentVel[1];
+            desired_current[2] = Kp*(3.14159f-currentPos[2]) + Kd*(0.0f-currentVel[2]) - KdJ*currentVel[2];
+            desired_current[3] = Kp*(3.14159f-currentPos[3]) + Kd*(0.0f-currentVel[3]) - KdJ*currentVel[3];
+            // check against current limit and convert back to uint16_t to send to motors
+            desired_current[0] = fmaxf(fminf(desired_current[0],current_limit),-current_limit);
+            desired_current[1] = fmaxf(fminf(desired_current[1],current_limit),-current_limit);
+            desired_current[2] = fmaxf(fminf(desired_current[2],current_limit),-current_limit);
+            desired_current[3] = fmaxf(fminf(desired_current[3],current_limit),-current_limit);
+            current_command[0] = (int16_t)(desired_current[0]*1000.0f); //(0.0f); // need to convert desired_current to mA before type-casting
+            current_command[1] = (int16_t)(desired_current[1]*1000.0f); //(0.0f);
+            current_command[2] = (int16_t)(desired_current[2]*1000.0f); //(0.0f);
+            current_command[3] = (int16_t)(desired_current[3]*1000.0f); //(0.0f);
+            // send commands
+            dxl_bus.SetMultGoalCurrents(dxl_ID, idLength, current_command);
+            loop_time = t2.read_us();
+            /*
+            if (motor_cmd_pos==1){
+                dxl_bus.SetMultGoalPositions(dxl_ID, idLength, tempPos1);
+                motor_cmd_pos = 0;
+            } else if (motor_cmd_pos==0){
+                dxl_bus.SetMultGoalPositions(dxl_ID, idLength, tempPos2);
+                motor_cmd_pos = 1;
+            }
+            */
+        }
+
+        if (motor_data_flag==1){
+            motor_data_flag = 0;
             // print data
-            pc.printf("%.3f, %.3f, %.3f, %.3f, %.3f\n\r", t.read(), currentPos[0], currentPos[1], currentPos[2], currentPos[3]);
+            pc.printf("%.3f, %d, %.3f, %.3f, %.3f, %.3f\n\r", t.read(), loop_time, currentPos[0], currentPos[1], currentPos[2], currentPos[3]);
         }
 
         /**
