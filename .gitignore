@@ -6,3 +6,8 @@ projectfiles
 BUILD
 VL6180X
 *.hg
+.clangd
+compile_commands.json
+.cache
+mbed-os
+dynamixel_XM430
